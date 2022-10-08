@@ -1,11 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ContactList from '../components/ContactList';
 import SearchBar from '../components/SearchBar';
 import { getContacts, deleteContact } from '../utils/api';
-import { LocaleConsumer } from '../contexts/LocaleContext';
+import LocaleContext from '../contexts/LocaleContext';
 
-function HomePageWrapper() {
+function HomePage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [contacts, setContacts] = useState([]);
+  const [keyword, setKeyword] = useState(() => {
+    return searchParams.get('keyword') || '';
+  });
+  const { locale } = useContext(LocaleContext);
+  
+  useEffect(() => {
+    getContacts().then(({ data }) => {
+      setContacts(data);
+    });
+  }, []);
+
+  async function onDeleteHandler(id) {
+    await deleteContact(id);
+
+    // update the contacts state from network.js
+    const { data } = await getContacts();
+    setContacts(data);
+  }
+
+  function onKeywordChangeHandler(keyword) {
+    setKeyword(keyword);
+    setSearchParams({ keyword });
+  }
+
+  const filteredContacts = contacts.filter((contact) => {
+    return contact.name.toLowerCase().includes(
+      keyword.toLowerCase()
+    );
+  });
+
+  return (
+    <section>
+      <SearchBar keyword={keyword} keywordChange={onKeywordChangeHandler} />
+      <h2>{locale === 'id' ? 'Daftar Kontak' : 'Contacts List'}</h2>
+      <ContactList contacts={filteredContacts} onDelete={onDeleteHandler} />
+    </section>
+  );
+}
+
+export default HomePage;
+
+/* function HomePageWrapper() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const keyword = searchParams.get('keyword');
@@ -87,4 +131,4 @@ class HomePage extends React.Component {
   }
 }
 
-export default HomePageWrapper;
+export default HomePageWrapper; */
